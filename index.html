@@ -28,12 +28,20 @@
 
 <body class="ms-font-m ms-welcome">
     <div id="content">
-        <section id="sideload-msg" class="ms-welcome__main">
+        <section id="sideload-msg" class="ms-welcome__main" style="display: none">
             <h2 class="ms-font-xl ms-fontWeight-semilight ms-fontColor-neutralPrimary ms-u-slideUpIn20">Please sideload your addin to see app body.</h2>
         </section>
-        <input id="get-info" type="button" value="Get info" /><br />
+
+        <h3>Please populate Custom Task Field "Duration 1" with your Optimistic task duration</h3>
+        <h3>Please populate Custom Task Field "Duration 3" with your Pessimistic task duration</h3>
+
+        <input id="get-info" type="button" value="Get sigma" /><br />
+        <input id="reload" type="button" value="Reload IDs" /><br />
         <span id="message"></span>
+        <span id="message2"></span>
+        <span id="message3"></span>
     </div>
+    
     
     <script type="text/javascript" src="node_modules/office-ui-fabric-js/dist/js/fabric.js"></script>
     <script type="text/javascript" src="node_modules/jquery/dist/jquery.js"></script>

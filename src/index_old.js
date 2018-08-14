@@ -9,22 +9,20 @@
     // The initialize function must be run each time a new page is loaded.
     Office.initialize = function (reason) {
         $(document).ready(function () {
-            getTaskInfo();    
+            
             // After the DOM is loaded, add-in-specific code can run.
-            $('#get-info').click(getFields);
-            $('#reload').click(getTaskInfo);
+          //  app.initialize();
+            $('#get-info').click(getTaskInfo);
         });
     };
 
     // Get the maximum task index, and then get the task GUIDs.
     function getTaskInfo() {
-        taskGuids = [];
         getMaxTaskIndex().then(
             function (data) {
-                getTaskGuids(data);
+                getTaskGuids(data).then(showSigma);
             }
         );
-        resetCounters();
     }
 
     // Get the maximum index of the tasks for the current project.
@@ -43,13 +41,13 @@
         return defer.promise();
     }
 
-
     // Get each task GUID, and then display the GUIDs in the add-in.
     function getTaskGuids(maxTaskIndex) {
         var defer = $.Deferred();
-        for (var i = 1; i <= maxTaskIndex; i++) {
+        for (var i = 0; i <= maxTaskIndex; i++) {
             getTaskGuid(i);
         }
+        //showSigma();
         return defer.promise();
         function getTaskGuid(index) {
             Office.context.document.getTaskByIndexAsync(index,
@@ -60,6 +58,7 @@
                             defer.resolve();
                         }
                         totalTaskscounterInCall++;
+                        getTaskFields(result.value);
                     }
                     else {
                         onError(result.error);
@@ -80,19 +79,9 @@
     var critTaskCountInCallback = 0;
     var totalTaskscounterInCall = 0;
     var totalTaskscounterInCallback = 0;
-    var getTaskFieldAsyncCounter = 0;
 
     // Get the specified fields for the selected task.
-    function getFields() {
-        for (var i = 0; i < taskGuids.length; i++) {
-            getTaskFields(taskGuids[i]);
-        }
-        showSigma();
-    }
-
-    var getFieldCounter = 0;
-
-    function getTaskFields(taskGuid) {
+    async function getTaskFields(taskGuid) {
         var output = '';
         var targetFields = [Office.ProjectTaskFields.Critical, Office.ProjectTaskFields.Summary, Office.ProjectTaskFields.ScheduledDuration, Office.ProjectTaskFields.Duration1, Office.ProjectTaskFields.Duration3];
         
@@ -106,14 +95,19 @@
         // Get each field, and then display the field values in the add-in.
         function getField() {
             if (index == targetFields.length) {
-                getFieldCounter++;
-                addVariances(fieldValues);
+                for (var i = 0; i < fieldValues.length; i++) {
+                    output += fieldValues[i] + '<br />';
+                }
+                addVariances(fieldValues);// put it as a resolve 
 
+                /**
+                 * TODO add return defer.success statement
+                 */
+                //return defer.promise();
             }
 
             // Get the field value. If the call is successful, then get the next field.
             else {
-                getTaskFieldAsyncCounter++;
                 Office.context.document.getTaskFieldAsync(
                     taskGuid,
                     targetFields[index],
@@ -124,13 +118,14 @@
                             if(index == 1 )
                                 totalTaskscounterInCallback++;
 
+
+
                             //if Task is not on Critical path, do nothing and exit function 
                             if(index == 0 && !result.value.fieldValue) {
                                 nonCritCounter++;     
                             } else {
                                 //if Task is on Critical path and is a Summary task, do nothing and exit function
                                 if (index == 1 && result.value.fieldValue){
-                                    console.log(result.value.fieldValue);
                                     summaryCounter++;
                                 } else { 
 
@@ -157,51 +152,38 @@
             }
         }
     }
-    
 
+    var critTaskCountInAddVar = 0;
+    var sigmaCount = 0;
     function addVariances(fieldValues){
         sumVariances += ((fieldValues[2] - fieldValues[1])*(fieldValues[2] - fieldValues[1]))/36;
+        critTaskCountInAddVar++;
+        console.log("kyp");
     }
 
-    var sigmaCount = 0;
 
     function showSigma(){
         sigmaCount++;
         sigma = Math.sqrt(sumVariances);        
-        
-        
-        resetCounters();
-    }
-
-    function resetCounters() {
-        drawCounters()
-
-        
+        $('#message').html("Sigma is " + sigma + " days");
+                
+  //      $('#message2').html("out of total " + critTaskCount + " critical tasks");
+        $('#message3').html(
+            "<br> critTaskCountInAddVar=" + critTaskCountInAddVar + 
+            "<br> critTaskCountInCallback="+ critTaskCountInCallback + 
+            "<br> summaryCounter=" + summaryCounter + 
+            "<br> nonCritCounter=" + nonCritCounter +
+            "<br> totalTaskscounterInCall=" + totalTaskscounterInCall +
+            "<br> totalTaskscounterInCallback=" + totalTaskscounterInCallback
+        );
+        sumVariances = 0;
+        critTaskCountInAddVar = 0;
         critTaskCountInCallback = 0;
         nonCritCounter = 0;
         summaryCounter = 0;
         totalTaskscounterInCall = 0;
         totalTaskscounterInCallback = 0;
-        getFieldCounter = 0;
-        getTaskFieldAsyncCounter = 0;
-
-        sumVariances = 0;
-        sigma = 0;
-    }
-
-    function drawCounters() {
-        $('#message').html("Sigma is " + sigma);        
-        //      $('#message2').html("out of total " + critTaskCount + " critical tasks");
-              $('#message3').html(
-                  "<br> critTaskCountInCallback="+ critTaskCountInCallback + 
-                  "<br> summaryCounter=" + summaryCounter + 
-                  "<br> nonCritCounter=" + nonCritCounter +
-                  "<br> totalTaskscounterInCall=" + totalTaskscounterInCall +
-                  "<br> totalTaskscounterInCallback=" + totalTaskscounterInCallback +
-                  "<br> getFieldCounter=" + getFieldCounter + 
-                  "<br> getTaskFieldAsyncCounter=" + getTaskFieldAsyncCounter 
-                  
-              );
+        
     }
     
     
